@@ -1,5 +1,4 @@
 # coding: utf-8
-
 from flask import request
 from typing import Dict, List
 
