@@ -21,7 +21,6 @@ def index_view():
 
 @app.route('/building', methods=['POST', ])
 def building_view() -> BuildingResponse:
-    # "{\"address\":\"Москва\", \"year\":\"2020\"}"
     if not request.get_data():
         raise BodyNotFound(message='Body objects not found')
 
@@ -44,8 +43,7 @@ def building_view() -> BuildingResponse:
 
 @app.route('/building/<int:build_id>/add-bricks', methods=['POST', ])
 def bricks_view(build_id: int) -> BuildingResponse:
-    # "{\"count_bricks\":\"600\"}"
-    building = Building.query.get(build_id)
+    building = db.session.query(Building).filter(Building.id == build_id).one_or_none()
     if building is None:  # если такого здания нет, то добавить кирпичи не можем
         raise DBError(message=f'Building with id={build_id} not such')
 
@@ -59,8 +57,9 @@ def bricks_view(build_id: int) -> BuildingResponse:
     except ValueError:
         raise ParamError(field_name='count_bricks', message='The number of bricks must be a number')
 
-    curr_bricks = Bricks.query.get(build_id)
+    curr_bricks = db.session.query(Bricks).filter(Bricks.id == build_id).one_or_none()
     if curr_bricks is not None:
+        count_bricks += curr_bricks.count_bricks
         Bricks.query.filter_by(id=build_id).update({'count_bricks': count_bricks})
     else:
         bricks = Bricks(id=building.id, count_bricks=count_bricks)
@@ -72,7 +71,7 @@ def bricks_view(build_id: int) -> BuildingResponse:
         db.session.rollback()
         return f'Not created: {err}', 501
 
-    return f'/building/{build_id}/add-bricks/', 201
+    return f'Updated building ID: {build_id}', 201
 
 
 @app.route('/stats', methods=['GET', ])
